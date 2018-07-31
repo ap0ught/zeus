@@ -8,8 +8,12 @@ import os, subprocess, tempfile
 #Used to give system exit and error messages
 import sys
 
+# General defaults/declarations
+version = "v0.7"
+file_path = ""
 
-#Used for warning messages
+
+#Used for colored error handling
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -20,10 +24,6 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-
-
-version = "v0.7"
-file_path = ""
 
 help_list_old = """
 Commands:
@@ -74,21 +74,56 @@ for x in sys.argv[1:]:
 
 
 
+# Register signal handlers for SIGINT (^C) and SIGTERM.
+
+# $SIG{'INT'} = sub { signal_handler('SIGINT'); };
+# $SIG{'TERM'} = sub { signal_handler('SIGTERM'); };
+
+# **** Need to do some research on the best way to handle these in python ****
 
 
 
 
-
-
-
-
-##############################################
+##################
 # Personal Notes #
+##################
 
-# One way to edit the file
-# import subprocess
-# subprocess.call(['vi', 'filename.txt'])
-
-
-# This works
+# -> This works for file editing
 # subprocess.call(['vi', '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'])
+
+####################
+# Project Overview #
+####################
+
+# zeus is just a 6 step process
+
+# 1. take in json
+# 2. have the ability to run it
+# 3. report/save the return code
+# 4. be able to edit the json w/versioning
+# 5. stop if bad return codes
+# well 5 steps
+
+###################
+# Project To Do's #
+###################
+
+# [X] Create error handling to replace AnsweRS:ErrorMaker
+# [X] Process command line arguments and print help menu if needed
+# [] Create & process signal handlers for python3
+#     -> Ask Mayfield abot this one
+# [] Create a similar Command dispatch table for Zeus execution
+#     -> Ask Mayfield abot this one
+# [] Create Prompt loop
+# [] Take in JSON file from specified path
+# [] Decode the JSON file to run deployment steps OR run straight from file
+# [] Save the return code of each deployment step
+#     -> Either do this by adding a sub number like "4.1":
+#     -> Or creating a temp JSON file that will have sub sections
+#     -> Maybe think about decoding the JSON into a hashset and then exec that
+#     -> Ask Mayfield abot this one
+# [] Edit the JSON deployment plan and version it
+#     -> Either with versioning by diff file names or adding version headers
+#     -> Ask Mayfield abot this one
+# [] If a bad return code is recieved from the execution, then abort the deploy
+# [] TBD
