@@ -10,7 +10,8 @@ import sys
 
 # General defaults/declarations
 version = "v0.7"
-file_path = ""
+    #Temp Testing filepath
+file_path = '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'
 
 
 #Used for colored error handling
@@ -41,6 +42,7 @@ Aliases:
 
 help_list_new = """
 Commands:
+	cancel			quit, exit, etc.
 	edit			edit the command list
 	help			print this help menu
 	load <call>		load the command list with the output from call
@@ -52,8 +54,59 @@ Aliases:
 	plan			alias for 'load plan_deployment'
 """
 
-# Command dispatch table
+# Command dispatch table/functions
 
+def cancel():
+    print(bcolors.WARNING + "WARNING: Aborting Program" + bcolors.ENDC)
+    exit(0)
+
+#TODO
+def edit():
+    print("This is where I would edit the File")
+    subprocess.call(['vi', file_path])
+
+def help():
+    print(bcolors.OKGREEN + help_list_new + bcolors.ENDC)
+
+# TODO
+def load(call):
+    print "This is where i would call plan_deployment.pl and get the JSON file"
+    print "This could also be simply loaded from a JSON specified path"
+    print "I would need to change plan_deployment.pl -j to return the file path"
+    print "and not the crazy mess output that it currently is"
+    print call
+    pass # load the command list with the output from call
+
+# TODO
+def reset():
+    print "This is where I would reset the depoloyment plan"
+    print "Not sure if I really need this, since the JSON will get overwritten"
+    pass # reload the command list
+
+# TODO
+def run(lines):
+    print "This is where i would exec run(lines)"
+    print lines
+    pass # execute the indicated commands, eg. \"1-3,5-10\"
+
+# TODO
+def walk(lines):
+    print "This is where i would exec walk(lines)"
+    print lines
+    pass # same as run, but prompts before each command
+
+# TODO
+def show():
+    print "This is where I would show the JSON file"
+    pass # show the command list AKA the JSON FILE
+
+# TODO
+# Register signal handlers for SIGINT (^C) and SIGTERM.
+
+# $SIG{'INT'} = sub { signal_handler('SIGINT'); };
+# $SIG{'TERM'} = sub { signal_handler('SIGTERM'); };
+
+# **** Need to do some research on the best way to handle these in python ****
 
 
 # Boastful startup message
@@ -71,15 +124,29 @@ for x in sys.argv[1:]:
         sys.exit(bcolors.FAIL + "ERROR: Unrecognized argument: "+ x + bcolors.ENDC)
 
 
+# Begin Prompt Loop
 
-
-
-# Register signal handlers for SIGINT (^C) and SIGTERM.
-
-# $SIG{'INT'} = sub { signal_handler('SIGINT'); };
-# $SIG{'TERM'} = sub { signal_handler('SIGTERM'); };
-
-# **** Need to do some research on the best way to handle these in python ****
+while True:
+    # This is a temporary for testing purposes
+    var = raw_input(bcolors.UNDERLINE + "What's Next?:"+ bcolors.ENDC+" ")
+    if(var == "help"):
+        help()
+    elif(var == "edit"):
+        edit()
+    elif(var == "cancel"):
+        cancel()
+    elif(var == "load"):
+        load("TEMP LOAD")
+    elif(var == "reset"):
+        reset()
+    elif(var == "run"):
+        run("TEMP RUN LINES")
+    elif(var == "walk"):
+        walk("TEMP WALK LINES")
+    elif(var == "show"):
+        show()
+    else:
+        print(bcolors.FAIL + "Invalid command: '"+var+"' (try 'help')."+ bcolors.ENDC)
 
 
 
@@ -91,18 +158,23 @@ for x in sys.argv[1:]:
 # -> This works for file editing
 # subprocess.call(['vi', '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'])
 
+# July 31st, 2018
+#   Things to Ask Mayfield
+#       -> An example output from zeus so i can get a general overview of what happens
+#       -> How mayfield would like the return codes completed in JSON
+#       -> JSON versioning... Either with a header or new file alltogether
+
 ####################
 # Project Overview #
 ####################
 
-# zeus is just a 6 step process
+# zeus is just a 5 step process
 
 # 1. take in json
 # 2. have the ability to run it
 # 3. report/save the return code
 # 4. be able to edit the json w/versioning
 # 5. stop if bad return codes
-# well 5 steps
 
 ###################
 # Project To Do's #
@@ -114,6 +186,12 @@ for x in sys.argv[1:]:
 #     -> Ask Mayfield abot this one
 # [] Create a similar Command dispatch table for Zeus execution
 #     -> Ask Mayfield abot this one
+#     [] Finish edit()
+#     [] Finish load(call)
+#     [] Finish reset()
+#     [] Finish run(lines)
+#     [] Finish walk(lines)
+#     [] Finish show()
 # [] Create Prompt loop
 # [] Take in JSON file from specified path
 # [] Decode the JSON file to run deployment steps OR run straight from file
