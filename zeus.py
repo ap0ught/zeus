@@ -42,7 +42,7 @@ Aliases:
 
 help_list_new = """
 Commands:
-	cancel			quit, exit, etc.
+	abort			quit, exit, etc.
 	edit			edit the command list
 	help			print this help menu
 	load <call>		load the command list with the output from call
@@ -52,6 +52,7 @@ Commands:
 	show			show the command list
 Aliases:
 	plan			alias for 'load plan_deployment'
+    plan-json       alias for 'load plan_deployment -j'
 """
 
 # Command dispatch table/functions
@@ -101,6 +102,11 @@ def show():
     pass # show the command list AKA the JSON FILE
 
 # TODO
+def plan_json():
+    print "This is where I would plan the deployment with a JSON file"
+    pass # show the command list AKA the JSON FILE
+
+# TODO
 # Register signal handlers for SIGINT (^C) and SIGTERM.
 
 # $SIG{'INT'} = sub { signal_handler('SIGINT'); };
@@ -128,23 +134,26 @@ for x in sys.argv[1:]:
 
 while True:
     # This is a temporary for testing purposes
-    var = raw_input(bcolors.UNDERLINE + "What's Next?:"+ bcolors.ENDC+" ")
-    if(var == "help"):
+    var = raw_input(bcolors.OKGREEN + "zeus--> "+ bcolors.ENDC+" ").split()
+    if(var[0] == "help"):
         help()
-    elif(var == "edit"):
+    elif(var[0] == "edit"):
         edit()
-    elif(var == "cancel"):
+    elif(var[0] == "abort"):
         cancel()
-    elif(var == "load"):
-        load("TEMP LOAD")
-    elif(var == "reset"):
+    elif(var[0] == "load"):
+        load(var[1])
+    elif(var[0] == "reset"):
         reset()
-    elif(var == "run"):
-        run("TEMP RUN LINES")
-    elif(var == "walk"):
-        walk("TEMP WALK LINES")
-    elif(var == "show"):
+    elif(var[0] == "run"):
+        run(var[1])
+    elif(var[0] == "walk"):
+        walk(var[1])
+    elif(var[0] == "show"):
         show()
+    elif(var[0] == "plan-json"):
+        plan_json()
+        print var[1:]
     else:
         print(bcolors.FAIL + "Invalid command: '"+var+"' (try 'help')."+ bcolors.ENDC)
 
@@ -157,6 +166,11 @@ while True:
 
 # -> This works for file editing
 # subprocess.call(['vi', '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'])
+
+# -> This works for splitting the JSON calls into an array for the subprocess
+# print subprocess.call("ls -lx".split())
+# print subprocess.check_output("ls -l".split())
+
 
 # July 31st, 2018
 #   Things to Ask Mayfield
