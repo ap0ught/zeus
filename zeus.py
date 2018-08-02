@@ -4,15 +4,18 @@
 #Used to decode the JSON
 import json
 #Used to create a temporary file and write the contents to it
-import os, subprocess, tempfile
+import os
+import subprocess
+import tempfile
+import io
 #Used to give system exit and error messages
 import sys
 
 # General defaults/declarations
 version = "v0.7"
-    #Temp Testing filepath
-file_path = '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'
-
+#Gobal variables
+file_path = ""
+deploy_dict = dict()
 
 #Used for colored error handling
 class bcolors:
@@ -43,77 +46,87 @@ Aliases:
 help_list_new = """
 Commands:
 	abort			quit, exit, etc.
-	edit			edit the command list
+	edit			edit the deplotment plan
 	help			print this help menu
-	load <call>		load the command list with the output from call
-	reset			reload the command list
+	load <file>		load the json deployment plan from the specified path
 	run [lines]		execute the indicated commands, eg. \"1-3,5-10\"
 	walk [lines]		same as run, but prompts before each command
 	show			show the command list
-Aliases:
-	plan			alias for 'load plan_deployment'
-    plan-json       alias for 'load plan_deployment -j'
 """
 
-# Command dispatch table/functions
-
+# Command Functions
 def cancel():
     print(bcolors.WARNING + "WARNING: Aborting Program" + bcolors.ENDC)
     exit(0)
+#End of Function
 
-#TODO
 def edit():
-    print("This is where I would edit the File")
-    subprocess.call(['vi', file_path])
+    try:
+        subprocess.call(['vi', file_path])
+        load(file_path)
+    except:
+        print(bcolors.WARNING + "EXCEPTION: Unkown Exception" + bcolors.ENDC)
+        print(sys.exc_info()[0])
+#End of Function
 
 def help():
     print(bcolors.OKGREEN + help_list_new + bcolors.ENDC)
+#End of Function
 
-# TODO
-def load(call):
-    print "This is where i would call plan_deployment.pl and get the JSON file"
-    print "This could also be simply loaded from a JSON specified path"
-    print "I would need to change plan_deployment.pl -j to return the file path"
-    print "and not the crazy mess output that it currently is"
-    print call
-    pass # load the command list with the output from call
+def load(path):
+    global file_path
+    global deploy_dict
+    file_path = path
+    try:
+        deploy_dict = json.loads(io.open(file_path, mode="r", encoding="utf-8").read())
+        #For testing purposes only to show that the dict is sucessfully created
+        # print json.dumps(deploy_dict, sort_keys=True, indent=4)
+    except ValueError:
+        print(bcolors.WARNING + "EXCEPTION: Please Check JSON File Syntax" + bcolors.ENDC)
+    except IOError:
+        print(bcolors.WARNING + "EXCEPTION: Bad File Path Given" + bcolors.ENDC)
+    except:
+        print(bcolors.WARNING + "EXCEPTION: Unkown Exception" + bcolors.ENDC)
+        print(sys.exc_info()[0])
+#End of Function
 
-# TODO
 def reset():
-    print "This is where I would reset the depoloyment plan"
-    print "Not sure if I really need this, since the JSON will get overwritten"
-    pass # reload the command list
+    global deploy_dict
+    deploy_dict = {}
+    print(bcolors.WARNING + "Deployment Plan Reset" + bcolors.ENDC)
+#End of Function
 
 # TODO
 def run(lines):
     print "This is where i would exec run(lines)"
     print lines
     pass # execute the indicated commands, eg. \"1-3,5-10\"
+#End of Function
 
 # TODO
 def walk(lines):
     print "This is where i would exec walk(lines)"
     print lines
     pass # same as run, but prompts before each command
+#End of Function
 
-# TODO
 def show():
-    print "This is where I would show the JSON file"
-    pass # show the command list AKA the JSON FILE
+    global file_path
+    if not file_path :
+        print(bcolors.WARNING + "Please Load A File First" + bcolors.ENDC)
+    else:
+        print io.open(file_path, mode="r", encoding="utf-8").read()
+#End of Function
 
-# TODO
-def plan_json():
-    print "This is where I would plan the deployment with a JSON file"
-    pass # show the command list AKA the JSON FILE
+# Dev function for checking the contents of the deploy dictionary
+def print_dict():
+    global deploy_dict
+    print json.dumps(deploy_dict, sort_keys=True, indent=4)
+#End of Function
 
-# TODO
-# Register signal handlers for SIGINT (^C) and SIGTERM.
-
-# $SIG{'INT'} = sub { signal_handler('SIGINT'); };
-# $SIG{'TERM'} = sub { signal_handler('SIGTERM'); };
-
-# **** Need to do some research on the best way to handle these in python ****
-
+################################################################################
+#                                 Main Program                                 #
+################################################################################
 
 # Boastful startup message
 print ('\t\t       Zeus ' + version)
@@ -125,24 +138,27 @@ for x in sys.argv[1:]:
     if(x == '-h' or x == '--help'):
         sys.exit(bcolors.OKGREEN + help_list_new + bcolors.ENDC)
     elif(x == '-d' or x == '--debug'):
-        print(bcolors.WARNING + "WARNING: Debugging currently not available" + bcolors.ENDC)
+        print(bcolors.WARNING + "WARNING: Debugging Currently Not Available" + bcolors.ENDC)
     else:
-        sys.exit(bcolors.FAIL + "ERROR: Unrecognized argument: "+ x + bcolors.ENDC)
+        sys.exit(bcolors.FAIL + "ERROR: Unrecognized Argument: "+ x + bcolors.ENDC)
 
 
 # Begin Prompt Loop
-
 while True:
-    # This is a temporary for testing purposes
     var = raw_input(bcolors.OKGREEN + "zeus--> "+ bcolors.ENDC+" ").split()
-    if(var[0] == "help"):
+    if(not var):
+        print(bcolors.WARNING + "No Arguments Given, Please Try Again Or Try 'help'" + bcolors.ENDC)
+    elif(var[0] == "help"):
         help()
     elif(var[0] == "edit"):
         edit()
     elif(var[0] == "abort"):
         cancel()
     elif(var[0] == "load"):
-        load(var[1])
+        if(len(var) == 1):
+            print(bcolors.WARNING + "No Filepath Given" + bcolors.ENDC)
+        else:
+            load(var[1])
     elif(var[0] == "reset"):
         reset()
     elif(var[0] == "run"):
@@ -154,11 +170,13 @@ while True:
     elif(var[0] == "plan-json"):
         plan_json()
         print var[1:]
+    #Dev function for checking the contents of deployment dictionary
+    elif(var[0] == "test"):
+        print_dict()
     else:
-        print(bcolors.FAIL + "Invalid command: '"+var+"' (try 'help')."+ bcolors.ENDC)
+        print(bcolors.FAIL + "Invalid Command: Please Try Again Or Try 'help'"+ bcolors.ENDC)
 
-
-
+#------------------------------------------------------------------------------#
 
 ##################
 # Personal Notes #
@@ -171,6 +189,20 @@ while True:
 # print subprocess.call("ls -lx".split())
 # print subprocess.check_output("ls -l".split())
 
+# Aug 2nd, 2018
+#   Things for future reference
+#       -> This program does NOT run plan_deployment.pl due to the fact that I
+#           would need to change a few small things in that program in order for
+#           zeus.py to behave identically to zeus.pl, and since it was determined
+#           that I would not have access to that code while working remote I am
+#           unable to fix it at this time. Maybe sometime soon in the future
+#           (It's a simple fix in what it outputs with 'plan_deployment.pl -j')
+#       -> Didn't get a final determination from Mayfield about how he would like
+#           the versioning of the edited JSON files to be done so I am just going
+#           to implement a temporary solution by adding the Version header to the
+#           JSON files. Again this would require a change of plan_deployment.pl
+#           for full implementation
+#       ->
 
 # July 31st, 2018
 #   Things to Ask Mayfield
@@ -182,6 +214,9 @@ while True:
 # Project Overview #
 ####################
 
+# --> Maybe think about doing a MVP that loads a json file from a specified path
+#     and then runs everything it needs too. Then think about having differen't
+#     Branches that incorporate the previous zeus.pl features
 # zeus is just a 5 step process
 
 # 1. take in json
@@ -190,6 +225,8 @@ while True:
 # 4. be able to edit the json w/versioning
 # 5. stop if bad return codes
 
+# no zeus py will just take in a json file
+
 ###################
 # Project To Do's #
 ###################
@@ -197,25 +234,26 @@ while True:
 # [X] Create error handling to replace AnsweRS:ErrorMaker
 # [X] Process command line arguments and print help menu if needed
 # [] Create & process signal handlers for python3
-#     -> Ask Mayfield abot this one
+#     -> Ask Mayfield about this one
 # [] Create a similar Command dispatch table for Zeus execution
-#     -> Ask Mayfield abot this one
-#     [] Finish edit()
-#     [] Finish load(call)
-#     [] Finish reset()
+#     [X] Finish edit()
+#     [X] Finish load(path)
+#     [X] Finish reset()
 #     [] Finish run(lines)
 #     [] Finish walk(lines)
-#     [] Finish show()
-# [] Create Prompt loop
-# [] Take in JSON file from specified path
+#     [X] Finish show()
+# [X] Create Prompt loop
+# [X] Take in JSON file from specified path
 # [] Decode the JSON file to run deployment steps OR run straight from file
 # [] Save the return code of each deployment step
 #     -> Either do this by adding a sub number like "4.1":
 #     -> Or creating a temp JSON file that will have sub sections
 #     -> Maybe think about decoding the JSON into a hashset and then exec that
-#     -> Ask Mayfield abot this one
-# [] Edit the JSON deployment plan and version it
+#     -> Ask Mayfield about this one
+# [X] Edit the JSON deployment plan
 #     -> Either with versioning by diff file names or adding version headers
-#     -> Ask Mayfield abot this one
+#     -> Ask Mayfield about this one
+# [] Version the JSON Deployment plan after editing
+#     -> Still waiting on a reply from Mayfield about this one
 # [] If a bad return code is recieved from the execution, then abort the deploy
 # [] TBD

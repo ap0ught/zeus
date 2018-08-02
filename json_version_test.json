@@ -1,4 +1,5 @@
 {
+   "Version" : "0.1",
    "1" : "sudo relog --session --start --type “qa deploy” --title “QA Deploy“",
    "2" : "RELOG_SID=$(cat $HOME/.relog_session)",
    "3" : "sudo relog --session $RELOG_SID --add-ticket WP-1419",
