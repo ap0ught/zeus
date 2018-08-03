@@ -8,6 +8,7 @@ import os
 import subprocess
 import tempfile
 import io
+import collections
 #Used to give system exit and error messages
 import sys
 
@@ -16,6 +17,7 @@ version = "v0.7"
 #Gobal variables
 file_path = ""
 deploy_dict = dict()
+dep_res_dict = dict()
 
 #Used for colored error handling
 class bcolors:
@@ -54,19 +56,23 @@ Commands:
 	show			show the command list
 """
 
-# Command Functions
+# Function Declarations
 def cancel():
     print(bcolors.WARNING + "WARNING: Aborting Program" + bcolors.ENDC)
     exit(0)
 #End of Function
 
 def edit():
-    try:
-        subprocess.call(['vi', file_path])
-        load(file_path)
-    except:
-        print(bcolors.WARNING + "EXCEPTION: Unkown Exception" + bcolors.ENDC)
-        print(sys.exc_info()[0])
+    global file_path
+    if file_path:
+        try:
+            subprocess.call(['vi', file_path])
+            load(file_path)
+        except:
+            print(bcolors.WARNING + "EXCEPTION: Unkown Exception" + bcolors.ENDC)
+            print(sys.exc_info()[0])
+    else:
+        print(bcolors.WARNING + "Please Load A File First" + bcolors.ENDC)
 #End of Function
 
 def help():
@@ -97,10 +103,24 @@ def reset():
 #End of Function
 
 # TODO
-def run(lines):
-    print "This is where i would exec run(lines)"
-    print lines
-    pass # execute the indicated commands, eg. \"1-3,5-10\"
+def run(lines): # execute the indicated commands, eg. \"1-3,5-10\"
+    global deploy_dict
+    global dep_res_dict
+    if not lines:
+        # If there are no specified lines to run, then run them all!
+        # for k,v in deploy_dict.items():
+        for k, v in collections.OrderedDict(sorted(deploy_dict.items())).items():
+            print(bcolors.OKGREEN+ "INFO: Running Command #"+ k +bcolors.ENDC)
+            return_code = subprocess.call(v, shell=True)
+            #If the return_code is not 0 (Meaning a good execution)
+            #Then report the error and add the result to the dep_res_dict
+            if return_code:
+                print(bcolors.FAIL + "ERROR: Command #"+ k +" Failed"+bcolors.ENDC)
+            dep_res_dict[str(k)]=return_code
+        show_return()
+    else:
+        print lines # <type 'str'>
+        print type(lines)
 #End of Function
 
 # TODO
@@ -112,15 +132,34 @@ def walk(lines):
 
 def show():
     global file_path
-    if not file_path :
+    global deploy_dict
+    global dep_res_dict
+    if not file_path:
         print(bcolors.WARNING + "Please Load A File First" + bcolors.ENDC)
     else:
-        print io.open(file_path, mode="r", encoding="utf-8").read()
+        # print io.open(file_path, mode="r", encoding="utf-8").read()
+        for k, v in collections.OrderedDict(sorted(deploy_dict.items())).items():
+            print "   "+k +" : "+ v
+#End of Function
+
+def show_return():
+    global dep_res_dict
+    print(bcolors.OKGREEN+ "Deployment Return Codes:"+bcolors.ENDC)
+    for k, v in collections.OrderedDict(sorted(dep_res_dict.items())).items():
+        if v:
+            print "   "+k+"R : "+ (bcolors.FAIL+str(v)+bcolors.ENDC)
+        else:
+            print "   "+k+"R : "+ (bcolors.OKGREEN+str(v)+bcolors.ENDC)
 #End of Function
 
 # Dev function for checking the contents of the deploy dictionary
 def print_dict():
     global deploy_dict
+    print list(iter(deploy_dict))
+
+    for k,v in deploy_dict.items():
+        print k +" : "+ v
+
     print json.dumps(deploy_dict, sort_keys=True, indent=4)
 #End of Function
 
@@ -162,14 +201,14 @@ while True:
     elif(var[0] == "reset"):
         reset()
     elif(var[0] == "run"):
-        run(var[1])
-    elif(var[0] == "walk"):
+        if(len(var) == 1):
+            run('')
+        else:
+            run(var[1])
+    elif(var[0] == "walk"): #TODO
         walk(var[1])
     elif(var[0] == "show"):
         show()
-    elif(var[0] == "plan-json"):
-        plan_json()
-        print var[1:]
     #Dev function for checking the contents of deployment dictionary
     elif(var[0] == "test"):
         print_dict()
@@ -230,6 +269,23 @@ while True:
 ###################
 # Project To Do's #
 ###################
+
+#TODO
+# [] implement run()
+#   [X] implement run() W/O specified lines
+#   [] implement run() W/ specified lines
+#   [X] implement the return of execution codes
+#   [X] implement the addition of returned execution codes to dictionary
+# ? [] implement the overwrite of the JSON file once everything has been exec
+# ? [] Show the overall JSON file once everything has been ran
+# [] implement walk()
+#   [] implement the Similar things to the above function w/ asking next steps
+# [] implement 'Versioning'
+#   [] implement versioning of different files either by header of new file
+
+
+
+
 
 # [X] Create error handling to replace AnsweRS:ErrorMaker
 # [X] Process command line arguments and print help menu if needed
