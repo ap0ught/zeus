@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-# zeus.py ---POD format documentation is at the end of this file
+# zeus.py
+
+# Author: Liam Jameson
+#         Release Engineer Intern
+#         Multiply 2018
 
 #Used to decode the JSON
 import json
-#Used to create a temporary file and write the contents to it
+#Used for OS calls and dictionary functions
 import os
 import subprocess
-import tempfile
 import io
 import collections
 #Used to give system exit
@@ -30,22 +33,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-
-help_list_old = """
-Commands:
-	abort			quit, exit, etc.
-	edit			edit the command list
-	help			print this help menu
-	load <call>		load the command list with the output from call
-	reset			reload the command list
-	run [lines]		execute the indicated commands, eg. \"1-3,5-10\"
-	walk [lines]		same as run, but prompts before each command
-	show			show the command list
-Aliases:
-	plan			alias for 'load plan_deployment'
-"""
-
-help_list_new = """
+help_list = """
 Commands:
 	exit			exit the program
 	help			print this help menu
@@ -55,13 +43,16 @@ Commands:
 	walk [lines]		same as run, but prompts before each command
 	show			show the current deployment plan and any return codes
 """
+################################################################################
+#                            Function Declarations                             #
+################################################################################
 
-# Function Declarations
+#Exit zeus.py program as a whole
 def exit_program():
     print(bcolors.WARNING + "WARNING: Exiting Program" + bcolors.ENDC)
     exit(0)
-#End of Function
 
+#Edit the deployment JSON using 'vi'
 def edit():
     global file_path
     if file_path:
@@ -73,19 +64,18 @@ def edit():
             print(sys.exc_info()[0])
     else:
         print(bcolors.WARNING + "Please Load A Deployment Plan" + bcolors.ENDC)
-#End of Function
 
+#Print the help list
 def help():
-    print(bcolors.OKGREEN + help_list_new + bcolors.ENDC)
-#End of Function
+    print(bcolors.OKGREEN + help_list + bcolors.ENDC)
 
+#Load the deployment plan into the dictionary from the specified JSON file path
 def load(path):
     global file_path
     global deploy_dict
     file_path = path
     try:
         deploy_dict = json.loads(io.open(file_path, mode="r", encoding="utf-8").read())
-        #For testing purposes only to show that the dict is sucessfully created
     except ValueError:
         print(bcolors.WARNING + "EXCEPTION: Please Check JSON File Syntax" + bcolors.ENDC)
     except IOError:
@@ -93,118 +83,146 @@ def load(path):
     except:
         print(bcolors.WARNING + "EXCEPTION: Unkown Exception" + bcolors.ENDC)
         print(sys.exc_info()[0])
-#End of Function
 
+#Reset the deployment dictionary
 def reset():
     global deploy_dict
     deploy_dict = {}
     print(bcolors.WARNING + "Deployment Plan Reset" + bcolors.ENDC)
-#End of Function
 
+#Run the deployment plan without a walkthrough
 def run(lines):
     global deploy_dict
     global dep_res_dict
     dep_res_dict = {}
-    #If deploy_dict is empty
+    #If deployment dictionary is empty
     if not bool(deploy_dict):
         print(bcolors.WARNING + "Please Load A Deployment Plan" + bcolors.ENDC)
     else:
+        # If there are no specified lines to run, then run them all!
         if not lines:
-            # If there are no specified lines to run, then run them all!
             for k, v in collections.OrderedDict(sorted(deploy_dict.items())).items():
                 print(bcolors.OKGREEN+ "INFO: Running Command #"+ k +bcolors.ENDC)
                 return_code = subprocess.call(v, shell=True)
-                #If the return_code is not 0 (Meaning a good execution)
-                #Then report the error and add the result to the dep_res_dict
+                #If the return_code is not 0 (Meaning a bad execution)
+                #Then report the error and add the result to the result dictionary
                 if return_code:
                     print(bcolors.FAIL + "ERROR: Command #"+ k +" Failed"+bcolors.ENDC)
                 dep_res_dict[str(k)]=return_code
+            #Show the deployment return codes
             show_return()
+        #Since there are lines specified, run them
         else:
+            #Use the findRange() helper function to decode the specified lines
             line_range = findRange(lines)
             for x in line_range:
+                #If the specified line is not apart of the deployment plan,
+                #Simply throw a warning message and return the code 127 for that command number
                 if str(x) not in deploy_dict:
                     print(bcolors.WARNING+ "WARNING: Command #"+ str(x) +" does not exist"+bcolors.ENDC)
                     dep_res_dict[str(x)]=127
+                #If it is apart of the deployment plan, run the commnand
                 else:
                     print(bcolors.OKGREEN+ "INFO: Running Command #"+ str(x) +bcolors.ENDC)
                     return_code = subprocess.call(deploy_dict.get(str(x)), shell=True)
-                    #If the return_code is not 0 (Meaning a good execution)
-                    #Then report the error and add the result to the dep_res_dict
+                    #If the return_code is not 0 (Meaning a bad execution)
+                    #Then report the error and add the result to the result dictionary
                     if return_code:
                         print(bcolors.FAIL + "ERROR: Command #"+ str(x) +" Failed"+bcolors.ENDC)
                     dep_res_dict[str(x)]=return_code
+            #Show the deployment return codes
             show_return()
-#End of Function
 
+#Helper function to decode the range of the specified lines
 def findRange(lines):
     rangeArr = []
+    #Replace the commas with spaces then split the lines into a list
     splitLines = lines.replace(',', ' ').split()
     for x in splitLines:
+        #If split number range contains a '-', then split that and use the range()
+        #Function to decode the range and append it to the rangeArr list
         if '-' in x:
             rangeArr = rangeArr + range(int(x.split('-')[0]), int(x.split('-')[1])+1)
+        #Otherwise just append that number to the rangeArr list
         else:
             rangeArr.append(int(x))
     return rangeArr
-#End of Function
 
+#Run the deployment plan WITH a walkthrough
 def walk(lines):
     global deploy_dict
     global dep_res_dict
     dep_res_dict = {}
+    #If deployment dictionary is empty
     if not bool(deploy_dict):
         print(bcolors.WARNING + "Please Load A Deployment Plan" + bcolors.ENDC)
     else:
+        # If there are no specified lines to run, then run them all!
         if not lines:
-            # If there are no specified lines to run, then run them all!
             for k, v in collections.OrderedDict(sorted(deploy_dict.items())).items():
                 print(bcolors.OKGREEN+ "The next command to run is #"+ k +bcolors.ENDC)
                 print("--> "+v)
+                #Loop for walking through the deployment plan
                 while True:
                     var = raw_input(bcolors.WARNING+ "Shall we abort, skip, or continue? [a|s|c]: "+bcolors.ENDC)
                     if(var == "a" or var == "A"):
+                        #Go back to the main menu
                         prompt_loop()
                     elif(var == "s" or var == "S"):
                         break
                     elif(var == "c" or var == "C"):
                         print(bcolors.OKGREEN+ "INFO: Running Command #"+ v +bcolors.ENDC)
                         return_code = subprocess.call(v, shell=True)
+                        #If the return_code is not 0 (Meaning a bad execution)
+                        #Then report the error and add the result to the result dictionary
                         if return_code:
                             print(bcolors.FAIL + "ERROR: Command #"+ k +" Failed. Exiting deployment..."+bcolors.ENDC)
                         dep_res_dict[str(k)]=return_code
+                        #Go back to the main menu
                         prompt_loop()
                         break
                     else:
                         print(bcolors.WARNING+ "Invalid input... Please try again."+bcolors.ENDC)
+            #Show the deployment return codes
             show_return()
         else:
+            #Use the findRange() helper function to decode the specified lines
             line_range = findRange(lines)
             for x in line_range:
+                #If the specified line is not apart of the deployment plan,
+                #Simply throw a warning message and return the code 127 for that command number
                 if str(x) not in deploy_dict:
                     print(bcolors.WARNING+ "WARNING: Command #"+ str(x) +" does not exist... Skipping"+bcolors.ENDC)
                     dep_res_dict[str(x)]=127
+                #If it is apart of the deployment plan, run the commnand
                 else:
                     print(bcolors.OKGREEN+ "The next command to run is #"+ str(x) +bcolors.ENDC)
                     print("--> "+deploy_dict.get(str(x)))
+                    #Loop for walking through the deployment plan
                     while True:
                         var = raw_input(bcolors.WARNING+ "Shall we abort, skip, or continue? [a|s|c]: "+bcolors.ENDC)
                         if(var == "a" or var == "A"):
+                            #Go back to the main menu
                             prompt_loop()
                         elif(var == "s" or var == "S"):
                             break
                         elif(var == "c" or var == "C"):
                             print(bcolors.OKGREEN+ "INFO: Running Command #"+ str(x) +bcolors.ENDC)
                             return_code = subprocess.call(deploy_dict.get(str(x)), shell=True)
+                            #If the return_code is not 0 (Meaning a bad execution)
+                            #Then report the error and add the result to the result dictionary
                             if return_code:
                                 print(bcolors.FAIL + "ERROR: Command #"+ str(x) +" Failed. Exiting deployment..."+bcolors.ENDC)
                             dep_res_dict[str(x)]=return_code
+                            #Go back to the main menu
                             prompt_loop()
                             break
                         else:
                             print(bcolors.WARNING+ "Invalid input... Please try again."+bcolors.ENDC)
+            #Show the deployment return codes
             show_return()
-#End of Function
 
+#Show the deployment dictionary that holds all of the deployment information
 def show():
     global file_path
     global deploy_dict
@@ -216,8 +234,8 @@ def show():
             print "   "+k +" : "+ v
         if bool(dep_res_dict):
             show_return()
-#End of Function
 
+#Helper Function to show the deployment plan execution return codes
 def show_return():
     global dep_res_dict
     if bool(dep_res_dict):
@@ -227,8 +245,8 @@ def show_return():
                 print "   "+k+"R : "+ (bcolors.FAIL+str(v)+bcolors.ENDC)
             else:
                 print "   "+k+"R : "+ (bcolors.OKGREEN+str(v)+bcolors.ENDC)
-#End of Function
 
+#Main Menu loop
 def prompt_loop():
     while True:
         var = raw_input(bcolors.OKGREEN + "zeus--> "+ bcolors.ENDC+" ").split()
@@ -264,18 +282,16 @@ def prompt_loop():
             print_dict()
         else:
             print(bcolors.FAIL + "Invalid Command: Please Try Again Or Try 'help'"+ bcolors.ENDC)
-#End of Function
+
 
 # Dev function for checking the contents of the deploy dictionary
 def print_dict():
     global deploy_dict
     print list(iter(deploy_dict))
-
     for k,v in deploy_dict.items():
         print k +" : "+ v
-
     print json.dumps(deploy_dict, sort_keys=True, indent=4)
-#End of Function
+
 
 ################################################################################
 #                                 Main Program                                 #
@@ -288,110 +304,31 @@ print ('\t\t \"Release the Kraken!\"\n')
 # Process the command line arguments...
 for x in sys.argv[1:]:
     if(x == '-h' or x == '--help'):
-        sys.exit(bcolors.OKGREEN + help_list_new + bcolors.ENDC)
+        sys.exit(bcolors.OKGREEN + help_list + bcolors.ENDC)
     elif(x == '-d' or x == '--debug'):
         print(bcolors.WARNING + "WARNING: Debugging Currently Not Available" + bcolors.ENDC)
     else:
         sys.exit(bcolors.FAIL + "ERROR: Unrecognized Argument: "+ x + bcolors.ENDC)
 
-# Begin Prompt Loop
+# Begin Main Menu Prompt Loop
 prompt_loop()
 
-#------------------------------------------------------------------------------#
-
-##################
-# Personal Notes #
-##################
-
-# -> This works for file editing
-# subprocess.call(['vi', '/Users/liamjameson/Desktop/multiply-zeus/zeus/test_json.json'])
-
-# -> This works for splitting the JSON calls into an array for the subprocess
-# print subprocess.call("ls -lx".split())
-# print subprocess.check_output("ls -l".split())
-
-# Aug 2nd, 2018
-#   Things for future reference
-#       -> This program does NOT run plan_deployment.pl due to the fact that I
-#           would need to change a few small things in that program in order for
-#           zeus.py to behave identically to zeus.pl, and since it was determined
-#           that I would not have access to that code while working remote I am
-#           unable to fix it at this time. Maybe sometime soon in the future
-#           (It's a simple fix in what it outputs with 'plan_deployment.pl -j')
-#       -> Didn't get a final determination from Mayfield about how he would like
-#           the versioning of the edited JSON files to be done so I am just going
-#           to implement a temporary solution by adding the Version header to the
-#           JSON files. Again this would require a change of plan_deployment.pl
-#           for full implementation
-#       -> Just need to clean up the code a little bit and write some documentation
-
-# July 31st, 2018
-#   Things to Ask Mayfield
-#       -> An example output from zeus so i can get a general overview of what happens
-#       -> How mayfield would like the return codes completed in JSON
-#       -> JSON versioning... Either with a header or new file alltogether
-
-####################
-# Project Overview #
-####################
-
-# --> Maybe think about doing a MVP that loads a json file from a specified path
-#     and then runs everything it needs too. Then think about having differen't
-#     Branches that incorporate the previous zeus.pl features
-# zeus is just a 5 step process
-
-# 1. take in json
-# 2. have the ability to run it
-# 3. report/save the return code
-# 4. be able to edit the json w/versioning
-# 5. stop if bad return codes
-
-# no zeus py will just take in a json file
-
-###################
-# Project To Do's #
-###################
-
-#TODO
-# [X] implement run()
-#   [X] implement run() W/O specified lines
-#   [X] implement run() W/ specified lines
-#   [X] implement the return of execution codes
-#   [X] implement the addition of returned execution codes to dictionary
-# ? [] implement the overwrite of the JSON file once everything has been exec
-# ? [] Show the overall JSON file once everything has been ran
-# [X] implement walk()
-#   [X] implement the Similar things to the above function w/ asking next steps
-# ? [] implement 'Versioning'
-# ?  [] implement versioning of different files either by header of new file
+################################################################################
+#                               Project Notes                                  #
+################################################################################
 
 
+#################
+# Project Notes #
+#################
 
-
-
-# [X] Create error handling to replace AnsweRS:ErrorMaker
-# [X] Process command line arguments and print help menu if needed
-# [X] Create & process signal handlers for python3
-#     -> Ask Mayfield about this one
-# [X] Create a similar Command dispatch table for Zeus execution
-#     [X] Finish edit()
-#     [X] Finish load(path)
-#     [X] Finish reset()
-#     [X] Finish run(lines)
-#     [X] Finish walk(lines)
-#     [X] Finish show()
-# [X] Create Prompt loop
-# [X] Take in JSON file from specified path
-# [X] Decode the JSON file to run deployment steps OR run straight from file
-# [X] Save the return code of each deployment step
-#     -> Either do this by adding a sub number like "4.1":
-#     -> Or creating a temp JSON file that will have sub sections
-#     -> Maybe think about decoding the JSON into a hashset and then exec that
-#     -> Ask Mayfield about this one
-# [X] Edit the JSON deployment plan
-#     -> Either with versioning by diff file names or adding version headers
-#     -> Ask Mayfield about this one
-# [] Version the JSON Deployment plan after editing
-#     -> Still waiting on a reply from Mayfield about this one
-# [] If a bad return code is recieved from the execution, then abort the deploy
-# [] TBD
+# Future Project Notes
+# --> For future intergrations with plan_deployment.pl the following must be changed
+#       - The Plan alias function in zeus.py needs to be added so it will call
+#           plan_deployment.pl -j with the respective flags and recieve the
+#           the deployment plan JSON file path which will then be assigned to the
+#           file_path global variable in zeus.py. From there, the load() function
+#           can be called with the recieved path and the program will execute
+#           much like its parent program zeus.pl
+#       - In plan_deployment.pl, the switch -j needs slight editing to ONLY output
+#           the specifed file path to the deployment plan JSON
