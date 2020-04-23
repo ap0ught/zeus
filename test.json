@@ -1,0 +1,6 @@
+{
+   "1" : "sudo relog --session --start --type \"Fast roll\" --title \"Independent Deploy\"",
+   "2" : "RELOG_SID=$(cat $HOME/.relog_session)",
+   "3" : "sudo relog --session $RELOG_SID --add-ticket QEG-1",
+   "4" : "Test"
+}

@@ -1,0 +1,9 @@
+{
+   "1" : "echo hello",
+   "2" : "uname -n",
+   "3" : "ls -l",
+   "4" : "ls /Users/liamjameson/Desktop/multiply-zeus/zeus",
+   "5" : "sleep 5",
+   "6" : "say hello!",
+   "7" : "echo Bad Ending!; exit 1"
+}

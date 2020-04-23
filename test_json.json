@@ -1,0 +1,9 @@
+{
+   "1" : "sudo relog --session --start --type “qa deploy” --title “QA Deploy“",
+   "2" : "RELOG_SID=$(cat $HOME/.relog_session)",
+   "3" : "sudo relog --session $RELOG_SID --add-ticket WP-1419",
+   "4" : "cd /var/www/html/announcemedia/mayfield_test",
+   "5" : "git checkout master",
+   "6" : "prompt_continue.pl",
+   "7" : "sudo relog --list-open-sessions"
+}
